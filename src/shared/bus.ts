@@ -1,5 +1,12 @@
 import type { BusMsg } from './types';
 
+/** Relay chạy trên máy người dùng: nếu trang được host ở nơi khác (vd. GitHub Pages) thì nối tới localhost. */
+function defaultRelayUrl() {
+  const h = location.hostname;
+  const local = !h || h === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(h) || h.endsWith('.local');
+  return `ws://${local ? h || 'localhost' : 'localhost'}:8787`;
+}
+
 interface Env { id: string; from: string; m: BusMsg }
 
 /**
@@ -17,7 +24,7 @@ export class Bus {
   private handlers = new Set<(m: BusMsg) => void>();
   private closed = false;
 
-  constructor(private relayUrl = `ws://${location.hostname || 'localhost'}:8787`) {
+  constructor(private relayUrl = defaultRelayUrl()) {
     this.bc.onmessage = (e) => this.recv(e.data as Env);
     this.openWs();
   }

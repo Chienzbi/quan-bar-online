@@ -4,6 +4,8 @@
  * - Track file: đặt file được cấp quyền vào public/music/ và chọn 'file:/music/ten.mp3'.
  * - beat (số nhịp liên tục) luôn chạy kể cả khi tạm dừng nhạc, để đèn/nhân vật không đứng yên.
  */
+import { asset } from '../shared/assets';
+
 export const BANDS = 16;
 
 interface SynthDef { bpm: number; root: number; scale: number[]; prog: number[] }
@@ -171,7 +173,8 @@ export class AudioEngine {
         this.mediaSrc = this.ctx.createMediaElementSource(this.media);
         this.mediaSrc.connect(this.master);
       }
-      if (!this.media.src.endsWith(url)) this.media.src = url;
+      const src = url.startsWith('/') ? asset(url) : url; // '/music/x.mp3' -> đúng cả khi deploy dưới /<repo>/
+      if (!this.media.src.endsWith(src.replace(/^\.\//, ''))) this.media.src = src;
       void this.media.play().catch(() => { /* chờ cử chỉ người dùng */ });
       this.bpm = 120;
     } else {

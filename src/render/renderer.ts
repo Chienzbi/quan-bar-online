@@ -6,6 +6,7 @@ import type { Clip } from '../shared/types';
 import type { AudioEngine } from './audio';
 import { ChibiView } from './chibi/rig';
 import { Fx } from './fx';
+import { asset } from '../shared/assets';
 import { Camera } from './camera';
 import { BarScene } from './scene';
 import { AvatarView, StickerView } from './sticker';
@@ -71,15 +72,15 @@ export class BarRenderer implements RenderSink {
     await app.init({ width: STAGE_W, height: STAGE_H, background: 0x07030f, antialias: true, resolution: 1, autoDensity: false, powerPreference: 'high-performance' });
     host.appendChild(app.canvas);
     let bg: Texture | undefined;
-    try { if (!location.search.includes('noimg')) bg = await loadImageTexture('/bg/bar-top.png'); } catch { console.warn('Không nạp được /bg/bar-top.png, dùng scene vector'); }
+    try { if (!location.search.includes('noimg')) bg = await loadImageTexture(asset('bg/bar-top.png')); } catch { console.warn('Không nạp được /bg/bar-top.png, dùng scene vector'); }
     const stickers: (Texture | GifFrames)[] = [];
     try {
-      const res = await fetch('/stickers/index.json');
+      const res = await fetch(asset('stickers/index.json'));
       const names: unknown = await res.json();
       if (Array.isArray(names)) {
         for (const n of names.slice(0, 40)) {
           try {
-            const url = `/stickers/${encodeURIComponent(String(n))}`;
+            const url = asset(`stickers/${encodeURIComponent(String(n))}`);
             if (/\.gif$/i.test(String(n))) stickers.push(await loadGifFrames(url));
             else stickers.push(await loadImageTexture(url));
           } catch { console.warn('Không nạp được sticker', n); }
@@ -89,11 +90,11 @@ export class BarRenderer implements RenderSink {
     const r = new BarRenderer(app, audio, host, bg, stickers);
     if (bg) {
       try {
-        const [body, armL, armR] = await Promise.all(['body', 'armL', 'armR'].map((n) => loadImageTexture(`/bg/dj-${n}.png`)));
+        const [body, armL, armR] = await Promise.all(['body', 'armL', 'armR'].map((n) => loadImageTexture(asset(`bg/dj-${n}.png`))));
         r.scene.addDj({ body, armL, armR });
       } catch { console.warn('Không nạp được DJ'); }
       try {
-        const [l, rt] = await Promise.all(['a', 'b'].map((n) => loadImageTexture(`/bg/pet-${n}.png`)));
+        const [l, rt] = await Promise.all(['a', 'b'].map((n) => loadImageTexture(asset(`bg/pet-${n}.png`))));
         r.scene.addPets(l, rt);
       } catch { console.warn('Không nạp được hai nhân vật có cánh'); }
     }
