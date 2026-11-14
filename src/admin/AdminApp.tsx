@@ -81,6 +81,7 @@ export function AdminApp() {
       <section>
         <h2>Avatar</h2>
         <Slider label={`Số avatar tối đa: ${settings.maxAvatars}`} min={5} max={60} step={1} v={settings.maxAvatars} on={(v) => set({ maxAvatars: v })} />
+        <Slider label={settings.leaveMin ? `Avatar im lặng ${settings.leaveMin} phút thì rời bar (TikTok không báo người rời phòng)` : 'Avatar không tự rời bar (tắt)'} min={0} max={30} step={1} v={settings.leaveMin ?? 0} on={(v) => set({ leaveMin: v })} />
         <Slider label={`Thay avatar im lặng sau: ${settings.idleReplaceSec}s (chỉ khi hết slot)`} min={10} max={600} step={10} v={settings.idleReplaceSec} on={(v) => set({ idleReplaceSec: v })} />
         <div className="row">
           <input type="number" min={1} max={60} value={testN} onChange={(e) => setTestN(Number(e.target.value))} />

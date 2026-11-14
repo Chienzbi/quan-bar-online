@@ -14,6 +14,8 @@ export interface AvatarState {
   giftTotal: number;
   follower: boolean;
   lastLike: number;
+  /** lần gần nhất hiện đèn soi + dòng chữ "đã vào bar" */
+  welcomedAt?: number;
 }
 
 export interface TopEntry { userId: string; name: string; total: number }
@@ -44,6 +46,7 @@ export class AvatarManager {
   readonly slots = generateSlots();
   private order = fillOrder(this.slots);
   private avatars = new Map<string, AvatarState>();
+  private leaveMs = 0;
   private demo = false; // đang ở chế độ DEMO: người giả lập không được chào / không lên dải chữ
   /** Nhớ người đã follow / tặng quà kể cả khi avatar đã bị thay, để lần vào sau vẫn được viền đúng cấp. */
   private history = new Map<string, { follower: boolean; gift: number }>();
@@ -71,6 +74,7 @@ export class AvatarManager {
   configure(s: Settings) {
     this.demo = s.demo;
     this.idleMs = s.idleReplaceSec * 1000;
+    this.leaveMs = (s.leaveMin ?? 0) * 60000;
     this.lv2 = s.giftLv2;
     this.lv3 = s.giftLv3;
     if (s.maxAvatars !== this.maxAvatars) {
@@ -97,6 +101,12 @@ export class AvatarManager {
     if (this.budgetT >= 1) { this.budgetT = 0; this.budget = REACT_BUDGET_PER_SEC; }
     const now = performance.now();
     this.bigFx = this.bigFx.filter((t) => now - t < BIG_FX_MS);
+    // TikTok không báo người rời phòng: coi như đã rời nếu im lặng quá lâu (không áp dụng cho avatar DEMO)
+    if (!this.demo && this.leaveMs > 0) {
+      for (const a of [...this.avatars.values()]) {
+        if (!this.pending.has(a.slot.id) && now - a.lastActive > this.leaveMs) this.evict(a);
+      }
+    }
     if (this.queue.length) this.drainQueue();
   }
 
@@ -111,7 +121,15 @@ export class AvatarManager {
 
     switch (ev.type) {
       case 'JOIN':
-        if (existed && this.spend()) this.out.react(a.userId, 'wave'); // spawn mới đã xử lý trong ensure()
+        if (existed) {
+          // vào lại khi avatar còn trên sân (TikTok không báo lúc rời): chào lại bằng đèn soi + dòng chữ
+          if (!this.demo && now - (a.welcomedAt ?? 0) > 8000) {
+            const h = this.history.get(a.userId);
+            a.welcomedAt = now;
+            this.out.welcome(a.userId, a.name, h && h.gift > 0 ? 'gold' : h?.follower || a.follower ? 'pink' : 'white');
+          }
+          if (this.spend()) this.out.react(a.userId, 'wave');
+        } // spawn mới đã xử lý trong ensure()
         break;
       case 'LIKE':
         if (now - a.lastLike < LIKE_COOLDOWN) return; // gộp like liên tục
@@ -194,6 +212,7 @@ export class AvatarManager {
     this.out.spawn(a);
     const h = this.history.get(userId);
     if (h?.follower) { a.follower = true; this.out.badge(userId); }
+    a.welcomedAt = now;
     if (!this.demo) this.out.welcome(userId, name, h && h.gift > 0 ? 'gold' : h?.follower ? 'pink' : 'white');
     return a;
   }

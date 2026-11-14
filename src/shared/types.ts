@@ -36,6 +36,7 @@ export interface Settings {
   playlist: string[];
   giftLv2: number; // ngưỡng kim cương cấp 2
   giftLv3: number; // ngưỡng kim cương cấp 3
+  leaveMin: number; // live thật: avatar không tương tác quá X phút thì cho rời bar (0 = tắt). TikTok không gửi sự kiện rời phòng
   idleReplaceSec: number; // avatar không tương tác quá X giây mới bị thay khi hết slot
   liveUrl: string;
 }
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
   playlist: [],
   giftLv2: 100,
   giftLv3: 1000,
+  leaveMin: 5,
   idleReplaceSec: 60,
   liveUrl: 'ws://localhost:8788',
 };
