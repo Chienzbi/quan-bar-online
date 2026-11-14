@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.vite/
+*.log
+# ảnh/GIF tham khảo (có thể vướng bản quyền) — không đưa lên repo
+docs/img/
+.env
