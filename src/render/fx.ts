@@ -99,6 +99,29 @@ export class Fx {
     }
   }
 
+  /** Bong bóng sáng nhỏ bay lên chậm. */
+  floatBubbles(x: number, y: number, n: number) {
+    for (let i = 0; i < n; i++) {
+      this.emit({
+        tex: 'spark', x: x + (Math.random() - 0.5) * 70, y: y + Math.random() * 20,
+        vx: (Math.random() - 0.5) * 30, vy: -60 - Math.random() * 55, ay: -4, life: 1.6 + Math.random() * 0.9,
+        s0: 0.6, s1: 1.6, tint: Math.random() < 0.5 ? 0xbff4ff : 0xffd6f5, add: true, a: 0.85,
+      });
+    }
+  }
+
+  /** Chùm sao bắn lên rồi rơi xuống. */
+  starburst(x: number, y: number, n: number) {
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.5;
+      const sp = 220 + Math.random() * 220;
+      this.emit({
+        tex: 'star', x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, ay: 420, life: 1.1 + Math.random() * 0.5,
+        s0: 1, s1: 0.2, tint: POP[(Math.random() * POP.length) | 0], add: true, spin: 6,
+      });
+    }
+  }
+
   confetti(x: number, y: number, n: number) {
     for (let i = 0; i < n; i++) {
       const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.8; const sp = 180 + Math.random() * 280;
@@ -118,6 +141,27 @@ export class Fx {
       const t = new Text({ text: label, style: { fontFamily: 'Arial', fontSize: 24, fontWeight: '700', fill: 0xffe27a, stroke: { color: 0x3a0b4f, width: 5 } } });
       t.anchor.set(0.5); t.position.set(x, y + 22); this.layer.addChild(t);
       this.floaters.push({ t, vy: -45, life: 1.8 });
+    }
+  }
+
+  /** Chữ nổi ngắn bay lên (dùng cho lệnh bình luận). */
+  popText(x: number, y: number, label: string, fill = 0xffe27a) {
+    if (this.floaters.length >= 8) return;
+    const t = new Text({ text: label, style: { fontFamily: 'Arial', fontSize: 28, fontWeight: '800', fill, stroke: { color: 0x3a0b4f, width: 5 } } });
+    t.anchor.set(0.5); t.position.set(x, y); this.layer.addChild(t);
+    this.floaters.push({ t, vy: -50, life: 1.6 });
+  }
+
+  /** Các hạt bay theo vòng cung từ (x1,y1) tới (x2,y2). */
+  fly(x1: number, y1: number, x2: number, y2: number, n: number, tex: 'heart' | 'star', tint: number) {
+    const ay = 500;
+    for (let i = 0; i < n; i++) {
+      const L = 0.8 + Math.random() * 0.4;
+      this.emit({
+        tex, x: x1 + (Math.random() - 0.5) * 24, y: y1,
+        vx: (x2 - x1) / L, vy: (y2 - y1 - 0.5 * ay * L * L) / L, ay,
+        life: L, s0: 0.6, s1: 1, tint, spin: (Math.random() - 0.5) * 3, add: tex === 'star',
+      });
     }
   }
 

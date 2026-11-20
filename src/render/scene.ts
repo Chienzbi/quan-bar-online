@@ -514,12 +514,12 @@ export class BarScene {
       const y0 = this.hasImage ? 120 + 20 * Math.sin(i) : trussY(x0) + 24;
       const a = Math.PI / 2 + Math.sin(this.t * (0.55 + (i % 3) * 0.17) + i * 1.7) * (0.72 + 0.25 * sp);
       const dx = Math.cos(a); const dy = Math.sin(a);
-      const maxY = this.hasImage ? 1500 : 1250;
+      const maxY = this.hasImage ? 1000 : 1250; // laser dừng trên sân khấu, không quét lên khu avatar
       const len = Math.min(1500, (maxY - y0) / Math.max(0.2, dy));
       const col = NEON[(i + Math.floor(audio.beat / 8) + (sp > 0 ? Math.floor(this.t * 2) : 0)) % NEON.length];
       const k = (0.75 + 0.25 * audio.pulse) * L * (this.hasImage ? 0.7 : 1);
-      g.moveTo(x0, y0).lineTo(x0 + dx * len, y0 + dy * len).stroke({ width: 14, color: col, alpha: 0.07 * k });
-      g.moveTo(x0, y0).lineTo(x0 + dx * len, y0 + dy * len).stroke({ width: 3, color: col, alpha: 0.5 * k });
+      g.moveTo(x0, y0).lineTo(x0 + dx * len, y0 + dy * len).stroke({ width: 12, color: col, alpha: 0.05 * k });
+      g.moveTo(x0, y0).lineTo(x0 + dx * len, y0 + dy * len).stroke({ width: 2, color: col, alpha: 0.32 * k });
     }
     g.blendMode = 'add';
   }

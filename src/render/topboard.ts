@@ -24,6 +24,7 @@ export class TopBoard extends Container {
   private track = new Container();
   private trackW = 0;
   private compact: boolean;
+  private message = '';
 
   constructor(compact = false) {
     super();
@@ -41,7 +42,7 @@ export class TopBoard extends Container {
       this.track.mask = mask;
       this.track.position.set(VIEW_W / 2, 0);
       this.addChild(this.track);
-      this.build([], 0);
+      this.build('');
       return;
     }
 
@@ -67,34 +68,28 @@ export class TopBoard extends Container {
     this.addChild(this.total);
   }
 
-  /** Dựng lại dòng chữ chạy: "#1 Tên 5.000  ★  #2 Tên 5.000  ★  ...  ★  Tổng quà: N" */
-  private build(list: TopEntry[], total: number) {
+  /** Dựng dòng chữ chạy từ nội dung do admin nhập; để trống thì không hiện gì. */
+  private build(message: string) {
     for (const ch of this.track.removeChildren()) ch.destroy();
-    let x = 0;
-    const add = (text: string, fill: number, size = 24) => {
-      const t = new Text({ text, style: style(size, fill) });
-      t.anchor.set(0, 0.5); t.x = x;
-      this.track.addChild(t);
-      x += t.width + 14;
-    };
-    if (!list.length) {
-      add('Chưa có quà nào – hãy tặng quà để lên bảng TOP!', 0xffffff);
-    } else {
-      list.forEach((e, i) => {
-        const name = e.name.length > 16 ? e.name.slice(0, 15) + '…' : e.name;
-        add(`#${i + 1}`, MEDAL[i]);
-        add(name, 0xffffff);
-        add(e.total.toLocaleString('vi-VN'), 0xffe27a);
-        add('★', 0xff6fd0); x += 10;
-      });
-    }
-    add(`Tổng quà: ${total.toLocaleString('vi-VN')}`, 0xff9ad0);
-    this.trackW = x + GAP;
-    // giữ nguyên vị trí cuộn khi nội dung cập nhật (không giật về đầu mỗi lần có quà)
+    this.trackW = 0;
+    const text = message.trim();
+    if (!text) return;
+    const t = new Text({ text, style: style(24, 0xffffff) });
+    t.anchor.set(0, 0.5);
+    this.track.addChild(t);
+    this.trackW = t.width + GAP;
+    this.track.x = VIEW_W / 2;
+  }
+
+  /** Đặt nội dung chữ chạy (chỉ dựng lại khi đổi). */
+  setMessage(message: string) {
+    if (!this.compact || message === this.message) return;
+    this.message = message;
+    this.build(message);
   }
 
   setData(list: TopEntry[], total: number) {
-    if (this.compact) { this.build(list, total); return; }
+    if (this.compact) return; // bảng gọn chỉ hiện chữ do admin nhập (setMessage)
     this.rows.forEach((r, i) => {
       const e = list[i];
       r.name.text = e ? (e.name.length > 13 ? e.name.slice(0, 12) + '…' : e.name) : '—';
@@ -107,7 +102,7 @@ export class TopBoard extends Container {
 
   /** Gọi mỗi frame: cuộn dòng chữ sang trái, hết thì quay lại mép phải. */
   update(dt: number) {
-    if (!this.compact) return;
+    if (!this.compact || !this.trackW) return;
     this.track.x -= SPEED * dt;
     if (this.track.x < -VIEW_W / 2 - this.trackW + GAP) this.track.x = VIEW_W / 2;
   }

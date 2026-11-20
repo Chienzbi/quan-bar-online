@@ -9,7 +9,7 @@ const TRACKS: [string, string][] = [
   ['synth:neon', 'Neon Drive (synth 124 BPM)'],
   ['synth:pulse', 'Pulse (synth 128 BPM)'],
 ];
-const GIFT_PRESETS: [string, number][] = [['Hoa hồng', 1], ['Gấu bông', 99], ['Bó hoa', 299], ['Xe đua', 1000], ['Sư tử', 5000]];
+const GIFT_PRESETS: [string, number][] = [['Hoa hồng', 1], ['Trái tim', 5], ['Ly bia', 10], ['Gấu bông', 99], ['Bó hoa', 299], ['Xe đua', 1000], ['Sư tử', 5000]];
 
 export function AdminApp() {
   const bus = useMemo(() => new Bus(), []);
@@ -20,6 +20,7 @@ export function AdminApp() {
   const [testN, setTestN] = useState(20);
   const [file, setFile] = useState('');
   const [bulk, setBulk] = useState('');
+  const [camName, setCamName] = useState('');
   const bulkItems = bulk.split('\n').map((l) => l.trim()).filter(Boolean)
     .map((l) => { const y = parseYoutube(l); return y ? `yt:${y}` : /^\/[^\s]+\.(mp3|wav|ogg|m4a|aac)$/i.test(l) ? `file:${l}` : ''; })
     .filter(Boolean);
@@ -166,11 +167,32 @@ export function AdminApp() {
       </section>
 
       <section>
+        <h2>Chữ chạy trên bảng</h2>
+        <input type="text" maxLength={120} placeholder="Ví dụ: Chúc mừng sinh nhật bạn A 🎂 (để trống = ẩn)"
+          value={settings.marquee ?? ''} onChange={(e) => set({ marquee: e.target.value })} />
+      </section>
+
+      <section>
+        <h2>Camera</h2>
+        <div className="row">
+          <button onClick={() => bus.send({ t: 'cmd', name: 'focus', arg: 'dj' })}>Focus DJ</button>
+          <button onClick={() => bus.send({ t: 'cmd', name: 'focus', arg: 'random' })}>Focus người ngẫu nhiên</button>
+          <button onClick={() => bus.send({ t: 'cmd', name: 'focus', arg: 'off' })}>Toàn cảnh</button>
+        </div>
+        <div className="row">
+          <input type="text" placeholder="Tên người cần focus" value={camName} onChange={(e) => setCamName(e.target.value)} />
+          <button onClick={() => bus.send({ t: 'cmd', name: 'focus', arg: `name:${camName}` })}>Focus theo tên</button>
+        </div>
+        <label className="row"><input type="checkbox" checked={settings.camAuto ?? false} onChange={(e) => set({ camAuto: e.target.checked })} /> Tự động lia camera (ngẫu nhiên và khi có quà lớn)</label>
+      </section>
+
+      <section>
         <h2>Ánh sáng & animation</h2>
         <Slider label={`Cường độ ánh sáng: ${settings.lightIntensity.toFixed(2)}`} min={0} max={1.5} step={0.05} v={settings.lightIntensity} on={(v) => set({ lightIntensity: v })} />
         <Slider label={`Cường độ animation: ${settings.animIntensity.toFixed(2)}`} min={0.3} max={1.5} step={0.05} v={settings.animIntensity} on={(v) => set({ animIntensity: v })} />
         <label className="row"><input type="checkbox" checked={settings.lasers} onChange={(e) => set({ lasers: e.target.checked })} /> Laser</label>
-        <label className="row"><input type="checkbox" checked={settings.camera ?? true} onChange={(e) => set({ camera: e.target.checked })} /> Lia camera</label>
+        <label className="row"><input type="checkbox" checked={settings.teams ?? true} onChange={(e) => set({ teams: e.target.checked })} /> Đối kháng hai phe (!đỏ / !xanh)</label>
+        <label className="row"><input type="checkbox" checked={settings.wings ?? true} onChange={(e) => set({ wings: e.target.checked })} /> Cánh sau lưng avatar</label>
       </section>
     </div>
   );

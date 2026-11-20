@@ -1,5 +1,5 @@
 import { decompressFrames, parseGIF } from 'gifuct-js';
-import { Texture } from 'pixi.js';
+import { Sprite, Texture } from 'pixi.js';
 
 /** Các frame GIF đã bỏ nền trắng, cắt sát nhân vật; dùng chung cho mọi avatar. */
 export interface GifFrames {
@@ -51,7 +51,51 @@ function removeWhiteBackground(img: ImageData) {
   }
 }
 
-export async function loadGifFrames(url: string): Promise<GifFrames> {
+/**
+ * Cách xử lý nền:
+ *  - 'white': xoá nền trắng nối với viền (sticker avatar)
+ *  - 'whiteAll': xoá mọi pixel trắng/xám nhạt, kể cả vùng kín không nối với viền (nền ô caro lọt giữa các đám mây)
+ *  - 'black': nền đen thành trong suốt theo độ sáng (vẽ bình thường)
+ *  - 'keep': giữ nguyên (ảnh đã trong suốt, hoặc nền đen sẽ vẽ ở chế độ cộng sáng)
+ */
+export type GifBg = 'white' | 'whiteAll' | 'black' | 'keep';
+
+function keyWhiteAll(img: ImageData) {
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const mn = Math.min(d[i], d[i + 1], d[i + 2]);
+    const mx = Math.max(d[i], d[i + 1], d[i + 2]);
+    if (mn >= 185 && mx - mn <= 20) d[i + 3] = 0;
+  }
+}
+
+function keyBlack(img: ImageData) {
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const m = Math.max(d[i], d[i + 1], d[i + 2]);
+    const a = Math.min(1, Math.max(0, (m - 14) / 46)) * 255;
+    if (a < d[i + 3]) d[i + 3] = a;
+  }
+}
+
+/** Sprite phát GIF đã nạp: gọi step(dt) mỗi frame (chỉ khi đang hiển thị). */
+export class GifSprite extends Sprite {
+  private t = 0;
+  private idx = 0;
+  constructor(private frames: GifFrames, randomStart = false) {
+    super(frames.textures[0]);
+    if (randomStart) this.t = Math.random() * frames.total;
+  }
+  step(dt: number, speed = 1) {
+    const f = this.frames;
+    this.t = (this.t + dt * speed) % f.total;
+    let acc = 0, i = 0;
+    while (i < f.delays.length - 1 && acc + f.delays[i] <= this.t) acc += f.delays[i++];
+    if (i !== this.idx) { this.idx = i; this.texture = f.textures[i]; }
+  }
+}
+
+export async function loadGifFrames(url: string, bg: GifBg = 'white'): Promise<GifFrames> {
   const buf = await (await fetch(url)).arrayBuffer();
   const gif = parseGIF(buf);
   const frames = decompressFrames(gif, true);
@@ -78,7 +122,9 @@ export async function loadGifFrames(url: string): Promise<GifFrames> {
 
     // nền trắng được xử lý trên bản sao; canvas gốc giữ nguyên để ghép frame sau
     const img = ctx.getImageData(0, 0, W, H);
-    removeWhiteBackground(img);
+    if (bg === 'white') removeWhiteBackground(img);
+    else if (bg === 'whiteAll') keyWhiteAll(img);
+    else if (bg === 'black') keyBlack(img);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       if (img.data[(y * W + x) * 4 + 3] > 20) {
         if (x < minX) minX = x; if (x > maxX) maxX = x;

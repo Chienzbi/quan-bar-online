@@ -28,7 +28,8 @@ export interface Settings {
   animIntensity: number; // 0.3 - 1.5
   lightIntensity: number; // 0 - 1.5
   lasers: boolean;
-  camera: boolean;
+  /** Tự động lia camera (ngẫu nhiên + khi có quà lớn). Mặc định tắt: camera chỉ lia khi bạn bấm trong Panel. */
+  camAuto: boolean;
   musicPlaying: boolean;
   volume: number; // 0 - 1
   track: string; // 'synth:neon' | 'synth:pulse' | 'file:/music/xxx.mp3'
@@ -39,6 +40,12 @@ export interface Settings {
   leaveMin: number; // live thật: avatar không tương tác quá X phút thì cho rời bar (0 = tắt). TikTok không gửi sự kiện rời phòng
   idleReplaceSec: number; // avatar không tương tác quá X giây mới bị thay khi hết slot
   liveUrl: string;
+  /** Dòng chữ chạy trên bảng (để trống = không hiện). */
+  marquee: string;
+  /** Bật/tắt đối kháng hai phe (!đỏ / !xanh). */
+  teams: boolean;
+  /** Cánh vàng sau lưng avatar sticker. */
+  wings: boolean;
 }
 
 export interface Status {
@@ -59,7 +66,7 @@ export interface Status {
 export type BusMsg =
   | { t: 'event'; event: LiveEvent }
   | { t: 'settings'; patch: Partial<Settings> }
-  | { t: 'cmd'; name: 'reset' | 'spawnTest' | 'connect' | 'disconnect' | 'seek' | 'next'; arg?: number | string }
+  | { t: 'cmd'; name: 'reset' | 'spawnTest' | 'connect' | 'disconnect' | 'seek' | 'next' | 'focus'; arg?: number | string }
   | { t: 'status'; status: Status; settings: Settings }
   | { t: 'hello' };
 
@@ -69,7 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
   animIntensity: 1,
   lightIntensity: 1,
   lasers: true,
-  camera: true,
+  camAuto: false,
   musicPlaying: true,
   volume: 0.6,
   track: 'synth:neon',
@@ -79,4 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   leaveMin: 5,
   idleReplaceSec: 60,
   liveUrl: 'ws://localhost:8788',
+  marquee: '',
+  teams: true,
+  wings: true,
 };

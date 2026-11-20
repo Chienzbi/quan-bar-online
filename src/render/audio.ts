@@ -19,6 +19,7 @@ const mtof = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
 export class AudioEngine {
   ctx?: AudioContext;
   private master?: GainNode;
+  private sfxGain?: GainNode;
   private analyser?: AnalyserNode;
   private freq = new Uint8Array(0);
   private media?: HTMLAudioElement;
@@ -68,9 +69,60 @@ export class AudioEngine {
     if (this.ctx.state === 'suspended') void this.ctx.resume().catch(() => {});
   }
 
+  /** Âm báo đi thẳng ra loa, không qua bộ phân tích nên không làm lệch nhịp đèn. */
+  private sfxOut() {
+    const ctx = this.ctx!;
+    if (!this.sfxGain) {
+      this.sfxGain = ctx.createGain();
+      this.sfxGain.gain.value = this.volume * 0.9;
+      this.sfxGain.connect(ctx.destination);
+    }
+    return this.sfxGain;
+  }
+
+  private tone(freq: number, t: number, dur: number, type: OscillatorType, vol: number, slideTo?: number) {
+    const ctx = this.ctx!;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(this.sfxOut());
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  /** Âm báo ngắn tổng hợp bằng Web Audio (không bản quyền). Bỏ qua nếu trình duyệt chưa cho phát âm thanh. */
+  sfx(kind: 'gift' | 'big' | 'combo' | 'rose', n = 1) {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state !== 'running') return;
+    const t = ctx.currentTime + 0.02;
+    if (kind === 'rose') {
+      this.tone(1175, t, 0.22, 'sine', 0.1);
+      this.tone(1568, t + 0.07, 0.3, 'sine', 0.07);
+    } else if (kind === 'combo') {
+      const k = 1 + 0.07 * Math.min(n, 14);
+      this.tone(660 * k, t, 0.18, 'square', 0.09);
+      this.tone(990 * k, t + 0.08, 0.28, 'triangle', 0.14);
+    } else if (kind === 'gift') {
+      [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, t + i * 0.07, 0.5, 'triangle', 0.2));
+      this.tone(2093, t + 0.35, 0.6, 'sine', 0.08);
+    } else {
+      // quà cấp 3: quét tăng dần rồi nổ hợp âm và rải sao
+      this.tone(180, t, 0.7, 'triangle', 0.16, 900);
+      [262, 330, 392, 523].forEach((f) => this.tone(f, t + 0.7, 1.4, 'triangle', 0.18));
+      this.tone(131, t + 0.7, 1.2, 'sine', 0.3);
+      for (let i = 0; i < 10; i++) this.tone(1047 + Math.random() * 1500, t + 0.75 + i * 0.06, 0.3, 'sine', 0.07);
+    }
+  }
+
   setVolume(v: number) {
     this.volume = v;
     if (this.master) this.master.gain.value = v;
+    if (this.sfxGain) this.sfxGain.gain.value = v * 0.9;
     try { this.yt?.setVolume?.(Math.round(v * 100)); } catch { /* player chưa sẵn sàng */ }
   }
 

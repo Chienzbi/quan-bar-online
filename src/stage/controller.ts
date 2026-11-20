@@ -29,7 +29,9 @@ export async function startStage(host: HTMLElement): Promise<() => void> {
     renderer.params.anim = s.animIntensity;
     renderer.params.light = s.lightIntensity;
     renderer.params.lasers = s.lasers;
-    renderer.params.camera = s.camera ?? true;
+    renderer.params.camera = s.camAuto ?? false;
+    renderer.params.wings = s.wings ?? true;
+    renderer.board.setMessage(s.marquee ?? '');
     audio.loopTrack = (s.playlist?.length ?? 0) < 2;
     if (s.volume !== prev.volume) audio.setVolume(s.volume);
     if (s.track !== prev.track) audio.setTrack(s.track);
@@ -67,6 +69,7 @@ export async function startStage(host: HTMLElement): Promise<() => void> {
         if (m.name === 'reset') doReset();
         else if (m.name === 'seek') audio.seek(Number(m.arg) || 0);
         else if (m.name === 'next') nextTrack();
+        else if (m.name === 'focus') renderer.focusOn(String(m.arg ?? 'random'));
         else if (m.name === 'spawnTest') {
           const n = Math.min(60, Number(m.arg) || 10);
           for (let i = 0; i < n; i++) window.setTimeout(() => adapter.emit(demo.event('JOIN', demo.newViewer('test'))), i * 70);

@@ -88,3 +88,49 @@ export class JoinTicker extends Container {
     this.fade = 0;
   }
 }
+
+const HINT_W = 230;
+const HINT_H = 262;
+const HINT_LINES: [string, string][] = [
+  ['!đỏ / !xanh', 'chọn phe'],
+  ['!tỉnh Đà Nẵng', 'quê bạn'],
+  ['!cheers', 'cụng ly'],
+  ['!tim @tên', 'bắn tim'],
+  ['!nhảy 1-4', 'đổi điệu'],
+];
+
+/** Khung vuông hướng dẫn lệnh bình luận, đặt ở góc phải trên (đối xứng với bản đồ ở góc trái). */
+export class CommandHint extends Container {
+  private frame = new Graphics();
+  private t = 0;
+
+  constructor() {
+    super();
+    this.eventMode = 'none';
+    const title = new Text({ text: 'GÕ LỆNH', style: { fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 22, fontWeight: '800', fill: 0xffe27a, stroke: { color: 0x1a0b33, width: 4 } } });
+    title.anchor.set(0.5, 0);
+    title.position.set(HINT_W / 2, 12);
+    this.addChild(this.frame, title);
+    HINT_LINES.forEach(([cmd, what], i) => {
+      const y = 50 + i * 41;
+      const c = new Text({ text: cmd, style: { fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 20, fontWeight: '800', fill: 0xffffff, stroke: { color: 0x1a0b33, width: 4 } } });
+      c.position.set(14, y);
+      const w = new Text({ text: what, style: { fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 15, fontWeight: '600', fill: 0x9ff4ff, stroke: { color: 0x1a0b33, width: 3 } } });
+      w.position.set(16, y + 25);
+      this.addChild(c, w);
+    });
+    this.position.set(STAGE_W - 24 - HINT_W, 350);
+    this.draw(0.8);
+  }
+
+  private draw(a: number) {
+    this.frame.clear()
+      .roundRect(0, 0, HINT_W, HINT_H, 16).fill({ color: 0x120728, alpha: 0.6 })
+      .roundRect(0, 0, HINT_W, HINT_H, 16).stroke({ width: 2, color: 0x2de2ff, alpha: a });
+  }
+
+  update(dt: number) {
+    this.t += dt;
+    this.draw(0.6 + 0.3 * Math.sin(this.t * 2));
+  }
+}

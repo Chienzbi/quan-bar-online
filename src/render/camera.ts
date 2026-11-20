@@ -21,7 +21,9 @@ export class Camera {
   readonly world = new Container();
   enabled = true;
   private phase: Phase = 'idle';
-  private left = rand(5, 9);
+  private left = rand(3, 5);
+  private hold = 0; // thời gian giữ góc do focus() yêu cầu (0 = ngẫu nhiên)
+  private cool = 0; // giây còn lại trước khi focus tự động được phép lần nữa
   private dur = 1;
   private from = { x: STAGE_W / 2, y: STAGE_H / 2, zoom: 1 };
   private to = { x: STAGE_W / 2, y: STAGE_H / 2, zoom: 1 };
@@ -30,6 +32,7 @@ export class Camera {
   pick: ShotPicker = () => null;
 
   update(dt: number) {
+    if (this.cool > 0) this.cool -= dt;
     if (!this.enabled && this.phase === 'idle' && this.cur.zoom === 1) { this.apply(); return; }
     this.left -= dt;
     if (this.phase === 'idle') {
@@ -45,6 +48,30 @@ export class Camera {
     this.apply();
   }
 
+  /**
+   * Lia tới một điểm theo yêu cầu (quà lớn, người mới quan trọng...).
+   * force = true: ngắt cả khi đang ở góc khác. Không force: chỉ khi đang toàn cảnh và đã qua thời gian chờ.
+   */
+  focus(s: Shot, hold = 3.5, force = false, always = false) {
+    if (!this.enabled && !force && !always) return; // always: bỏ qua công tắc tự động (quà, thao tác thủ công)
+    if (!force && (this.phase !== 'idle' || this.cool > 0)) return;
+    this.from = { ...this.cur };
+    this.to = { x: s.x, y: s.y, zoom: s.zoom };
+    this.phase = 'in';
+    this.dur = this.left = rand(0.8, 1.2);
+    this.hold = hold;
+    this.cool = 12;
+  }
+
+  /** Về toàn cảnh ngay (dùng khi bấm "Toàn cảnh" trong Panel). */
+  release() {
+    if (this.phase === 'idle' || this.phase === 'out') return;
+    this.from = { ...this.cur };
+    this.to = { x: STAGE_W / 2, y: STAGE_H / 2, zoom: 1 };
+    this.phase = 'out';
+    this.dur = this.left = rand(1.0, 1.4);
+  }
+
   private startShot() {
     const s = this.pick();
     if (!s) { this.left = rand(3, 6); return; }
@@ -57,7 +84,8 @@ export class Camera {
   private nextPhase() {
     if (this.phase === 'in') {
       this.phase = 'hold';
-      this.dur = this.left = rand(3, 5.5);
+      this.dur = this.left = this.hold || rand(3, 5.5);
+      this.hold = 0;
       this.cur = { ...this.to };
     } else if (this.phase === 'hold') {
       this.phase = 'out';
@@ -67,7 +95,7 @@ export class Camera {
     } else {
       this.phase = 'idle';
       this.cur = { ...this.to };
-      this.left = rand(7, 14);
+      this.left = rand(6, 10);
     }
   }
 

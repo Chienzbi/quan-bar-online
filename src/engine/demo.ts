@@ -7,10 +7,6 @@ const NAMES = [
   'mixer_09', 'night_owl', 'sakura88', 'dj_nam', 'cutemeo', 'bao_pro', 'luna.vn', 'kimchi_boy', 'tra_sua_nho', 'neon_fox',
   'Hà My', 'Công Phát', 'Thùy Dương', 'Nhật Minh', 'Cẩm Tú', 'Đình Nam', 'Kim Ngân', 'Việt Hoàng', 'Thảo Vy', 'Hữu Phước',
 ];
-const COMMENTS = [
-  'Nhạc hay quá!', 'Chào cả nhà', 'Bar hôm nay vui ghê', 'Bật bài nữa đi', 'Nhảy lên nào', 'Xin chào từ Đà Nẵng',
-  'Quẩy thôi', 'Đỉnh quá', 'Mình mới vào nè', 'Cho mình xin bài này', 'Tuyệt vời', 'Cháy hết mình',
-];
 const GIFTS: [string, number][] = [['Hoa hồng', 1], ['Kem', 5], ['Ly bia', 10], ['Gấu bông', 99], ['Bó hoa', 299], ['Xe đua', 1000], ['Sư tử', 5000]];
 
 const SEED_COUNT = 10; // số avatar nền ở chế độ DEMO
@@ -42,7 +38,7 @@ export class DemoDirector {
     switch (type) {
       case 'JOIN': return { type, userId: v.userId, name: v.name };
       case 'LIKE': return { type, userId: v.userId, name: v.name, count: 1 + Math.floor(Math.random() * 12) };
-      case 'COMMENT': return { type, userId: v.userId, name: v.name, text: pick(COMMENTS) };
+      case 'COMMENT': return { type, userId: v.userId, name: v.name, text: '' };
       case 'FOLLOW': return { type, userId: v.userId, name: v.name };
       case 'SHARE': return { type, userId: v.userId, name: v.name };
       case 'GIFT': {
@@ -64,10 +60,9 @@ export class DemoDirector {
     const loop = () => {
       if (!this.running) return;
       const r = Math.random();
-      // chỉ hoạt động của các avatar nền; không có JOIN và GIFT giả (quà và người vào chỉ lấy từ live thật)
-      if (r < 0.5) this.adapter.emit(this.event('LIKE'));
-      else if (r < 0.85) this.adapter.emit(this.event('COMMENT'));
-      else if (r < 0.93) this.adapter.emit(this.event('FOLLOW'));
+      // chỉ hoạt động của các avatar nền; không có JOIN, GIFT và bình luận giả (chỉ lấy từ live thật hoặc Panel)
+      if (r < 0.77) this.adapter.emit(this.event('LIKE'));
+      else if (r < 0.89) this.adapter.emit(this.event('FOLLOW'));
       else this.adapter.emit(this.event('SHARE'));
       this.timer = window.setTimeout(loop, 900 + Math.random() * 2200);
     };
